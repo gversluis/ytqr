@@ -1,0 +1,5 @@
+config.php
+shorturls.map
+refresh.token
+*secret*.json
+bak/

@@ -1,0 +1,14 @@
+<?php
+# if you get errors, check your error logs, usually in /var/log/apache2/error.log
+
+define('YTQR_SHORT_MAP', '/etc/ytqr/shorturls.map');
+define('YTQR_SHORT_CHARACTERS', array('A','B','C','D','F','G','H','I','J','K','L','M','N','P','Q','R','S','T','V','W','X','Y','Z','b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z','2','4','5','6','7','8','9'));	# removed some syllables and numbers so there is a smaller chance of creating words. Acronyms are still at risk
+define('YTQR_SHORT_BASE_URL', 'https://example.org/v/');  // don't forget the trailing slash
+define('YTQR_PLAY_PLAYLIST_BASE_URL', 'https://www.youtube-nocookie.com/embed/?&autoplay=1&list=%s');  // don't forget to change your current map if you want to change this for earlier created urls
+define('YTQR_PLAY_VIDEO_BASE_URL', 'https://www.youtube-nocookie.com/embed/%s?&autoplay=1'); // don't forget to change your current map if you want to change this for earlier created urls
+define('YTQR_REFRESH_TOKEN_FILE', '/etc/ytqr/refresh.token');
+define('YTQR_AUTH_CONFIG_FILE', '/etc/ytqr/client_secret.apps.googleusercontent.com.json');
+require_once('/usr/share/phpqrcode/phpqrcode.php');	# this is the default path on debian, change if you use a different path
+require_once '/etc/ytqr/vendor/autoload.php';	# run "composer require google/apiclient:~2.0" to install Google dependencies
+
+?>

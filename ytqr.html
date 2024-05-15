@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Youtube shortened URL QR codes</title>
+    <style>
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 100%;
+        background: #333;
+      }
+
+      template {
+        display: none;  /* for older browsers */
+      }
+
+      .playlists {
+        position: relative;
+        top: 0;
+        width: 100%;
+        overflow: auto;
+        overflow-y: hidden;
+        overflow-x: auto;
+        white-space: nowrap;
+        background: #000;
+        margin-bottom: 6mm;
+      }
+
+      .playlist, .item {
+        position: relative;
+        vertical-align: top;
+        display: inline-block;
+        width: 320px;
+        white-space: normal;
+        overflow: visible;
+        color: #ccc;
+      }
+      .item {
+        margin: 2mm;
+        color: #ccc;
+      }
+      .button {
+        position: absolute;
+        display: block;
+        top: 60px;
+        left: calc(50% - 25px);
+        width: 0;
+        height: 0;
+        content: "";
+        border: 25px solid rgba(255,255,255,0.5);
+        border-radius: 50%;
+      }
+      .button:before {
+        position: absolute;
+        display: block;
+        top: -15px;
+        left: -12px;
+        width: 0;
+        height: 0;
+        content: "";
+        border-top: 15px solid transparent;
+        border-bottom: 15px solid transparent;
+        border-left: 30px solid rgba(150,0,0, 0.8);
+      }
+
+
+      .playlist h1 {
+        font-size: 120%;
+      }
+
+      .playlist h2 {
+        font-size: 80%;
+      }
+
+			.qrcode {
+				float: right;
+			}
+
+			.qrcode canvas {
+				background: white;
+				padding: 2px;
+			}
+
+    </style>
+</head>
+<body>
+  <div class="playlists">
+    <template>
+    <div class="playlist">
+      <a class="button" href="#" target="_blank"></a>
+      <img class="thumbnail" src="" id="$id"><br>
+			<a class="qrcode" href="TODO: create shorturl" download=""><canvas width="40" height="40"></canvas></a>
+      <h1 class="title"></h1><p class="description"></p>
+    </div>
+    </template>
+  </div>
+  <div class="playlistitems">
+    <template>
+    <div class="item">
+      <a class="button" href="#" target="_blank"></a>
+      <img class="thumbnail" src="" id="$id"><br>
+			<a class="qrcode" href="TODO: create shorturl" download=""><canvas width="40" height="40"></canvas></a>
+      <h2 class="title"></h2><p class="description"></p>
+      <br>
+    </div>
+    </template>
+  </div>
+</body>
+<script>
+  "use strict";    // I didn't make this up
+	if (! 'content' in document.createElement('template')) throw('This browser does not support template tag');
+
+  let loadScriptOnce = function(src, callback) {
+		var script = document.querySelector('script[src="'+src+'"]');
+		if (script) {	// already executed once
+			if (script.onLoaded) {
+				callback();
+			} else {
+				let originalOnLoad = script.onload;
+				script.onload = function() { originalOnLoad(); callback(); };	// resolve earlier promise and new promises
+			}
+		} else {
+			script = document.createElement('script');	// create new tag
+			script.src = src;
+			script.onload = function() { script.onLoaded = true; callback(); };
+			document.head.appendChild(script);
+		}
+  }
+
+	let createQRcode = function(config) {	// Uses https://github.com/kazuhikoarase/qrcode-generator/tree/master/js
+		let qr = qrcode(config.typeNumber || 0, config.errorCorrectionLevel || 'L');
+		qr.addData(config.text);
+		qr.make();
+
+		config.margin = config.margin || 24;
+		config.size = config.size || 600;
+		let length = qr.getModuleCount();
+
+		let screenSize = config.canvas.width
+		let screenCellSize = screenSize / length;
+		let screenCellSizeRound = screenCellSize > 2 ? 0.25 : 0;
+		let screenContext = config.canvas.getContext('2d');
+		screenContext.fillStyle = "white";
+		screenContext.fillRect(0, 0, config.canvas.width, config.canvas.height);
+
+		let downloadCanvas = document.createElement('canvas');
+		downloadCanvas.setAttribute('width', config.size);
+		downloadCanvas.setAttribute('height', config.size);
+		let downloadCellSize = (config.size - (2 * config.margin)) / length;
+		let downloadCellSizeRound = downloadCellSize > 2 ? 0.25 : 0;
+		let downloadContext = downloadCanvas.getContext('2d');
+		downloadContext.fillStyle = "white";
+		downloadContext.fillRect(0, 0, downloadCanvas.width, downloadCanvas.height);
+
+
+		for (let row = 0; row < length; row++) {
+			for (let col = 0; col < length; col++) {
+				screenContext.fillStyle = qr.isDark(row, col) ? 'black' : 'white';
+				screenContext.fillRect( screenCellSizeRound + row * screenCellSize, screenCellSizeRound + col * screenCellSize, screenCellSize + screenCellSizeRound, screenCellSize + screenCellSizeRound);	// add a little around the corners so we don't get white stripes there
+				downloadContext.fillStyle = qr.isDark(row, col) ? 'black' : 'white';
+				downloadContext.fillRect(config.margin - downloadCellSizeRound + row * downloadCellSize, config.margin - downloadCellSizeRound + col * downloadCellSize, downloadCellSize + downloadCellSizeRound, downloadCellSize + downloadCellSizeRound);	// add a little around the corners so we don't get white stripes there
+			}
+		}
+
+		let dataURL = downloadCanvas.toDataURL('image/png');
+		let url = dataURL.replace(/^data:image\/png/,'data:application/octet-stream');
+		config.canvas.parentElement.setAttribute('href',url);
+		config.canvas.parentElement.setAttribute('download', config.filename+'.png');
+		config.canvas.onmousedown = function(event) {
+			if (event.buttons>1) {	/* right or middle or extra buttons */
+				console.log('Caught mousedown to prevent save-as for image and download it instead so the filename is correct', event);
+				this.parentElement.click();
+			}
+		}
+	};
+
+  let loadQRcode = function(qrcodeNode, text, filename) {
+    loadScriptOnce('qrcode.js', function() {
+      createQRcode({
+        canvas: qrcodeNode,
+        text: text,
+        filename: filename
+      });	
+    });
+  };
+  
+  let loadGenerateQRcode = function(qrcodeNode, longUrl, description) {
+    let handler = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.removeEventListener('click', handler, false);
+      fetch('ytqr.php?short='+encodeURIComponent(longUrl)+'&description='+encodeURIComponent(description))
+      .then((response) => response.json())
+      .then((json) => loadQRcode(qrcodeNode, json.shortUrl, description));
+    };
+    qrcodeNode.parentElement.addEventListener('click', handler);
+  };
+
+	let loadPlaylists = function() {
+		fetch('ytqr.php?playlists=7')
+		.then((response) => response.json())
+		.then((json) => {
+			// console.log(json);
+			let template = document.querySelector('.playlists template');
+			for(const playlist of json.playlists.items) {
+				let playlistNode = template.content.cloneNode(true);
+				// console.log(playlistNode);
+				let snippet = playlist.snippet;
+				let thumbnailNode = playlistNode.querySelector('.thumbnail');
+				// console.log(thumbnailNode);
+				thumbnailNode.setAttribute('title', playlist.id);
+				try { thumbnailNode.setAttribute('src', snippet.thumbnails.medium.url) } catch(err) { console.log('Could not find medium thumbnail for playlist '+playlist.id) };
+				playlistNode.querySelector('.title').innerText = snippet.title;
+        playlistNode.querySelector('.button').setAttribute('href', json.urls[playlist.id].playUrl);
+				snippet.description ? playlistNode.querySelector('.description').innerText : playlistNode.querySelector('.description').remove();
+				thumbnailNode.addEventListener("click", function() {
+					loadPlaylist(this.title);
+				});
+        let qrcodeNode = playlistNode.querySelector('.qrcode canvas');
+        json.urls[playlist.id].shortUrl ? loadQRcode(qrcodeNode, json.urls[playlist.id].shortUrl, snippet.title) : loadGenerateQRcode(qrcodeNode, json.urls[playlist.id].playUrl, snippet.title);
+  			template.before(playlistNode);
+			}
+
+		})
+	};
+
+	let loadPlaylist = function(id) {
+		document.querySelectorAll('.playlistitems>.item').forEach((e) => e.remove());
+		fetch('ytqr.php?playlist='+id)
+		.then((response) => response.json())
+		.then((json) => {
+			let template = document.querySelector('.playlistitems template');
+			for(const item of json.playlist.items) {
+				let itemNode = template.content.cloneNode(true);
+				console.log(itemNode);
+				let snippet = item.snippet;
+				let thumbnailNode = itemNode.querySelector('.thumbnail');
+				console.log(thumbnailNode);
+				thumbnailNode.setAttribute('title', item.id);
+        itemNode.querySelector('.button').setAttribute('href', json.urls[item.id].playUrl);  /* TODO: onclick replace image with <iframe width="560" height="315" src="https://www.youtube.com/embed/D6Ac5JpCHmI?&autoplay=1" frameborder="0" allowfullscreen></iframe> */
+				try { thumbnailNode.setAttribute('src', snippet.thumbnails.medium.url) } catch(err) { console.log('Could not find medium thumbnail for playlistitem '+item.id) };
+				itemNode.querySelector('.title').innerText = snippet.title;
+				itemNode.querySelector('.description').innerText = snippet.description;
+        let qrcodeNode = itemNode.querySelector('.qrcode canvas');
+        json.urls[item.id].shortUrl ? loadQRcode(qrcodeNode, json.urls[item.id].shortUrl, snippet.title) : loadGenerateQRcode(qrcodeNode, json.urls[item.id].playUrl, snippet.title);
+				template.before(itemNode);
+			}
+		});
+
+	}
+
+
+  window.addEventListener("load", function(){
+    loadPlaylists();
+  });
+
+</script>
+</html>
+
+
+

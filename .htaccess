@@ -1,0 +1,3 @@
+Options -Indexes
+RewriteEngine on
+RewriteRule "([a-zA-Z0-9\-\_]*)/" "ytqr.php?redirect=$1" "[END]
